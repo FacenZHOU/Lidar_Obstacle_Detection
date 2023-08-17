@@ -1,152 +1,125 @@
-# Sensor Fusion Self-Driving Car Course
-
-<img src="media/ObstacleDetectionFPS.gif" width="700" height="400" />
-
-### Welcome to the Sensor Fusion course for self-driving cars.
-
-In this course we will be talking about sensor fusion, whch is the process of taking data from multiple sensors and combining it to give us a better understanding of the world around us. we will mostly be focusing on two sensors, lidar, and radar. By the end we will be fusing the data from these two sensors to track multiple cars on the road, estimating their positions and speed.
-
-**Lidar** sensing gives us high resolution data by sending out thousands of laser signals. These lasers bounce off objects, returning to the sensor where we can then determine how far away objects are by timing how long it takes for the signal to return. Also we can tell a little bit about the object that was hit by measuring the intesity of the returned signal. Each laser ray is in the infrared spectrum, and is sent out at many different angles, usually in a 360 degree range. While lidar sensors gives us very high accurate models for the world around us in 3D, they are currently very expensive, upwards of $60,000 for a standard unit.
-
-**Radar** data is typically very sparse and in a limited range, however it can directly tell us how fast an object is moving in a certain direction. This ability makes radars a very pratical sensor for doing things like cruise control where its important to know how fast the car infront of you is traveling. Radar sensors are also very affordable and common now of days in newer cars.
-
-**Sensor Fusion** by combing lidar's high resolution imaging with radar's ability to measure velocity of objects we can get a better understanding of the sorrounding environment than we could using one of the sensors alone.
-
-## Classroom Workspace
-
-The workspace provided in the SFND classroom comes preinstallated with everything that you need to finish the exercises and projects. Versions used by Udacity for this ND are as follows:
-
-* Ubuntu 16.04
-* PCL - v1.7.2
-* C++ v11
-* gcc v5.5
-
-**Note** The [[CMakeLists.txt](https://github.com/udacity/SFND_Lidar_Obstacle_Detection/blob/master/CMakeLists.txt)] file provided in this repo can be used locally if you have the same package versions as mentioned above. If you want to run this project locally (outside the Udacity workspace), please follow the steps under the **Local Installation** section.
+# Lidar Obstacle Detection Project
 
 
-## Local Installation
 
-### Ubuntu 
+### I. Preparation on Ubuntu
 
-1. Clone this github repo:
+For this project, the virtual Ubuntu environment was provided by the Udacity. Install the Point Cloud Library (PCL) and clone the project starter code [SFND_Lidar_Obstacle_Detection](https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git) to the Ubuntu environment.
 
-   ```sh
-   cd ~
-   git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git
-   ```
+```bash
+$ sudo apt install libpcl-dev
+$ git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git ./Lidar_Obstacle_Detection
+```
 
-2.  Edit [CMakeLists.txt](https://github.com/udacity/SFND_Lidar_Obstacle_Detection/blob/master/CMakeLists.txt) as follows:
+The directory structure of the starter code looks like:
+- src
+    * render
+        + `box.h`: struct definition for box objects
+        + `render.h`, `render.cpp`: classes and methods for rendering objects
+    * sensors
+        + `lidar.h`: functions using ray casting for creating PCD
+    * `environment.cpp`: main file for using PCL viewer and processing/visualizing PCD
+    * `processPointClouds.h`, `processPointClouds.cpp`: functions for filtering, segmenting, clustering, boxing, loading and saving PCD
 
-   ```cmake
-   cmake_minimum_required(VERSION 2.8 FATAL_ERROR)
-   
-   add_definitions(-std=c++14)
-   
-   set(CXX_FLAGS "-Wall")
-   set(CMAKE_CXX_FLAGS, "${CXX_FLAGS}")
-   
-   project(playback)
-   
-   find_package(PCL 1.11 REQUIRED)
-   
-   include_directories(${PCL_INCLUDE_DIRS})
-   link_directories(${PCL_LIBRARY_DIRS})
-   add_definitions(${PCL_DEFINITIONS})
-   list(REMOVE_ITEM PCL_LIBRARIES "vtkproj4")
-   
-   
-   add_executable (environment src/environment.cpp src/render/render.cpp src/processPointClouds.cpp)
-   target_link_libraries (environment ${PCL_LIBRARIES})
-   ```
+Try compiling the lidar simulator and run it. A window with a simulated highway environment should pop up.
+```bash
+$ cd Lidar_Obstacle_Detection
+$ mkdir build && cd build
+$ cmake ..
+$ make
+$ ./environment
+```
 
-3. Execute the following commands in a terminal
 
-   ```shell
-   sudo apt install libpcl-dev
-   cd ~/SFND_Lidar_Obstacle_Detection
-   mkdir build && cd build
-   cmake ..
-   make
-   ./environment
-   ```
 
-   This should install the latest version of PCL. You should be able to do all the classroom exercises and project with this setup.
-   
-**Note** The library version of PCL being distributed by the apt repository for 18.04 and 20.04 are both older than v1.11. The following links have the information regarding the versions-
+### II. Exercises
 
-[Bionic 18.04](https://www.ubuntuupdates.org/package/core/bionic/universe/updates/libpcl-dev)
-[Focal 20.04](https://www.ubuntuupdates.org/package/core/focal/universe/base/libpcl-dev)
+#### Lidar and Point Clouds
 
-You can either build PCL from source (for v1.11) or use the older version.
+1. Create a `Lidar` pointer object on the heap, taking two parameters: `std::vector<Car>` and `setGroundSlope` of 0. The `Lidar::scan()` method does a ray casting and returns a point cloud pointer object `pcl::PointCloud<pcl::PointXYZ>::Ptr`. Call `renderRays()` to plot rays on the viewer.
 
-### MAC
+<img src="media/lidar_lowResolution_01.png" width="800" height="400" />
 
-#### Install via Homebrew
-1. install [homebrew](https://brew.sh/)
-2. update homebrew 
-	```bash
-	$> brew update
-	```
-3. add  homebrew science [tap](https://docs.brew.sh/Taps) 
-	```bash
-	$> brew tap brewsci/science
-	```
-4. view pcl install options
-	```bash
-	$> brew options pcl
-	```
-5. install PCL 
-	```bash
-	$> brew install pcl
-	```
+2. Increase the lidar resolution by tweaking the constructor of `Lidar` class: `numLayers`, `horizontalAngleInc`. Set `minDistance` to 5 meter to remove points from the vehicle's rooftop. Set `sderr` to 0.2 to add some noises to the PCD.  
+<img src="media/lidar_highResolution_02.png" width="800" height="400" />
 
-6. Clone this github repo
+3. Remove rendering for the highway scene and rays, but enable rendering for the point cloud using `renderPointCloud()`.
 
-   ```shell
-   cd ~
-   git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git
-   ```
+<img src="media/lidar_PointCloud_03.png" width="800" height="400" />
 
-7. Edit the CMakeLists.txt file as shown in Step 2 of Ubuntu installation instructions above.
+#### Point Cloud Segmentation
 
-8. Execute the following commands in a terminal
+1. In the `processPointCloud.cpp`, to implement the `ProcessPointClouds::SegmentPlane()` method, use a `pcl::SACSegmentation<PointT>` object to segment the planar component from the input point cloud. Next to implement the `SeparateClouds()` helper method, use a `pcl::ExtractIndices<PointT>` object to extract the points not belong to the plane as the obstacles.  
 
-   ```shell
-   cd ~/SFND_Lidar_Obstacle_Detection
-   mkdir build && cd build
-   cmake ..
-   make
-   ./environment
-   ```
-If you get build errors related to Qt5, make sure that the path for Qt5 is correctly set in .bash_profile or .zsh_profile (Refer [#45](https://github.com/udacity/SFND_Lidar_Obstacle_Detection/issues/45))
+2. In the `environment.cpp`, create a `ProcessPointClouds<pcl::PointXYZ>` object, call `SegmentPlane()` to separate the plane and obstacle. Finally, render the plane and obstacle point clouds.  
 
-### WINDOWS
+<img src="media/lidar_Seperating_PointCloud_04.png" width="800" height="400" />
 
-#### Install via cvpkg
+#### Identify Different Obstacles using Euclidean Clustering with PCL
 
-1. Follow the steps [here](https://pointclouds.org/downloads/) to install PCL.
+1. In the `processPointCloud.cpp`, to implement the `ProcessPointClouds::Clustering()` method, create a Kd-tree representation `pcl::search::KdTree<PointT>::Ptr` for the input point cloud, configure the parameters for the Euclidean clustering object `pcl::EuclideanClusterExtraction<PointT>` and extract the clusters in the point cloud. In the `environment.cpp`, call the clustering function on the segmented obstacle point cloud, render clustered obstacle in different colors.  
+<img src="media/clustering_objects_colors.png" width="800" height="400" />
 
-2. Clone this github repo
+#### Bounding Boxes
 
-   ```shell
-   cd ~
-   git clone https://github.com/udacity/SFND_Lidar_Obstacle_Detection.git
-   ```
+1. Once point cloud clusters are found, we can add bounding boxes around the clusters. The boxed spaces should be considered as an area/object that our car is not allowed to enter, otherwise it would result a collision. Call `ProcessPointClouds::BoundingBox()` method, which finds the max and min point values as the boundary values for the `Box` data structure. Then render the `Box` structure for each cluster. 
+<img src="media/bounding-boxes.png" width="800" height="400" />
 
-3. Edit the CMakeLists.txt file as shown in Step 2 of Ubuntu installation instructions above.
+#### Load Real PCD
 
-4. Execute the following commands in Powershell or Terminal
+1. Create a new point processor for the real PCD from a `cityBlock`, the code is similar to the `simpleHighway` function. The point type is `pcl::PointXYZI` where the `I` indicates the intensity. The real PCD files are located at `src/sensors/data/pcd/data_1/` directory.  
+<img src="media/lidar_loadPCD_10.png" width="800" height="400" />
 
-   ```shell
-   cd ~/SFND_Lidar_Obstacle_Detection
-   mkdir build && cd build
-   cmake ..
-   make
-   ./environment
-   ```
+#### Filter with PCL
 
-#### Build from Source
+1. To implement the `ProcessPointClouds::FilterCloud()` in the `processPointClouds.cpp`, `pcl::VoxelGrid<PointT>` class is applied for **Voxel Grid** filtering, and `pcl::CropBox<PointT>` class is applied for **ROI-based** filtering. The `Eigen::Vector4f` class has four parameters representing `x`, `y`, `z` coordinates and the last one should be 1.0. We are interested in a good amount of distance in front or at back of the car and surroundings of the car. Point cloud data outside of the ROI should be removed, including the rooftop points.  
 
-[PCL Source Github](https://github.com/PointCloudLibrary/pcl)
+2. In the `environment.cpp`, call `ProcessPointClouds::FilterCloud()` function in the `cityBlock()`. Input a leaf size of 0.2m, so that the voxel size is large enough to help speed up the processing but not so large that object definition is preserved.
 
-[PCL Mac Compilation Docs](https://pcl.readthedocs.io/projects/tutorials/en/latest/compiling_pcl_macosx.html#compiling-pcl-macosx)
+<img src="media/lidar_FilterPCL_11.png" width="800" height="400" />
+
+#### Obstacle Detection with Real PCD
+
+1. Once having a filtered PCD, we can deploy the same segmentation and clustering techniques implemented previously in the `cityBlock()`.  
+
+2. Tweak the `Eigen::Vector4f minPoint/maxPoint` for `ProcessPointClouds::FilterCloud()` and `int minSize/maxSize` for `ProcessPointClouds::Clustering()`.  
+
+<img src="media/lidar_ObstacleDetection_realPCD_12.png" width="800" height="400" />
+
+#### Stream PCD
+
+1. Create a vector `stream` to store paths to the PCD files chronologically. Create a new `cityBlock()` function, which processes the input point cloud from the external. In the `main()` function of `environment.cpp`, inside the viewer update loop, read PCD file, process it and update the viewer.  
+
+<img src="media/lidar_streamPCD_00.gif" width="800" height="400" />
+
+
+
+### III. Lidar Obstacle Detection Project
+
+The previous exercises have created a processing pipeline for detecting the obstacles using PCL segmentation and clustering methods. In the final project, we have to implement the same obstacle detection pipeline but with the *3D RANSAC segmentation*, *KD-Tree*, and *Euclidean clustering algorithm* we created in the quizzes.
+
+1. Create a `ProcessPointClouds::SegmentPlaneRansac()` function in the `processPointClouds.cpp`, which uses the 3D RANSAC segmentation for plane implemented in the quiz. And call this segmentation function in the `cityBlock()` of `environment.cpp`.  
+
+2. Create `ProcessPointClouds::ClusteringEuclidean` and its helper function `ProcessPointClouds::clusterHelper` in the `processPointClouds.cpp`, which reuses the Euclidean clustering with KD-Tree with some modification from the quiz. And call this clustering function in the `cityBlock()` of `environment.cpp`.  
+
+3. Before building the final project, make sure the macro `CUSTOM_METHOD` is defined in the `environment.cpp` so that the custom implementations in the Step 1 and 2 are used. Otherwise, defining macro `PCL_METHOD` will use the segmentation and clustering functions provided by PCL library.
+
+<img src="media/lidar_final_01.gif" width="800" height="400" />
+
+
+
+### IV. Tracking and Challenge Problem
+
+
+
+### V. References
+
+`pcl::PointXYZ`: https://pointclouds.org/documentation/structpcl_1_1_point_x_y_z.html
+
+Example of segmenting the Plane with PCL: https://pointclouds.org/documentation/tutorials/extract_indices.html
+
+Example of Euclidean Cluster Extraction: https://pointclouds.org/documentation/tutorials/cluster_extraction.html
+
+Example of Voxel Grid filtering: https://pointclouds.org/documentation/tutorials/voxel_grid.html
+
+Example of Crop Box filtering: https://pointclouds.org/documentation/classpcl_1_1_crop_box.html
